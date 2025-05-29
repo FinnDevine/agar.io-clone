@@ -14,6 +14,7 @@ class WalletManager {
             this.connectedWallet = resp.publicKey;
             document.getElementById('walletAddress').textContent = this.connectedWallet.toString();
             document.getElementById('generateWalletButton').disabled = false;
+            document.getElementById('depositButton').disabled = false;
         } else {
             alert('No Solana wallet found');
         }
@@ -34,9 +35,18 @@ class WalletManager {
         }
         const amountInput = document.getElementById('depositAmount');
         const solAmount = parseFloat(amountInput.value);
-        if (!solAmount || !this.connectedWallet || !this.gameWallet) return;
+        if (!solAmount || solAmount <= 0) {
+            alert('Enter a valid amount');
+            return;
+        }
+        if (!this.connectedWallet || !this.gameWallet) {
+            alert('Wallet not ready');
+            return;
+        }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        const connection = new web3.Connection(web3.clusterApiUrl('mainnet-beta'), 'confirmed');
+        const endpoint = window.SOLANA_RPC_ENDPOINT ||
+            'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
+        const connection = new web3.Connection(endpoint, 'confirmed');
 
         const tx = new web3.Transaction().add(
             web3.SystemProgram.transfer({
@@ -48,11 +58,16 @@ class WalletManager {
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-        const { signature } = await window.solana.signAndSendTransaction(tx);
-        await connection.confirmTransaction(signature);
-        this.amount = lamports;
-        global.depositData = this.getPlayerData();
-        alert('Deposit sent');
+        try {
+            const { signature } = await window.solana.signAndSendTransaction(tx);
+            await connection.confirmTransaction(signature);
+            this.amount = lamports;
+            global.depositData = this.getPlayerData();
+            alert('Deposit sent');
+        } catch (e) {
+            console.error('Deposit failed', e);
+            alert('Deposit failed');
+        }
     }
 
     getPlayerData() {
