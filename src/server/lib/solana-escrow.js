@@ -1,6 +1,8 @@
 const {Connection, Keypair, PublicKey, SystemProgram, Transaction, sendAndConfirmTransaction} = require('@solana/web3.js');
 
-const RPC_ENDPOINT = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+// Use QuickNode by default but allow override via environment variable
+const RPC_ENDPOINT = process.env.SOLANA_RPC ||
+    'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
 const ESCROW_SECRET = process.env.ESCROW_SECRET_KEY;
 const ESCROW_PUBLIC = process.env.ESCROW_PUBLIC_KEY;
 
