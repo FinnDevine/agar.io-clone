@@ -1,4 +1,5 @@
-FROM node:14-alpine
+# Use a newer Node.js version so modern syntax like logical OR assignment works
+FROM node:20-alpine
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app

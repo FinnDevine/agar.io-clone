@@ -57,9 +57,9 @@ Or...
 
 >You can check out a more detailed setup tutorial on our [wiki](https://github.com/owenashurst/agar.io-clone/wiki/Setup).
 
-#### Requirements
-To run / install this game, you'll need: 
-- NodeJS with NPM installed.
+-#### Requirements
+To run / install this game, you'll need:
+- NodeJS v16 or higher (Node 20 recommended) with NPM installed.
 - socket.IO.
 - Express.
 
