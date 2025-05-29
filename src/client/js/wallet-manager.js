@@ -32,8 +32,6 @@ class WalletManager {
         if (!this.gameWallet) {
             this.generateGameWallet();
         }
-
-
         const amountInput = document.getElementById('depositAmount');
         const solAmount = parseFloat(amountInput.value);
         if (!solAmount || !this.connectedWallet || !this.gameWallet) return;
