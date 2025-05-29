@@ -9,7 +9,7 @@ class WalletManager {
 
     async connect() {
         if (window.solana && window.solana.isPhantom) {
-            const resp = await window.solana.connect();
+            const resp = await window.solana.connect({ onlyIfTrusted: false });
             this.connectedWallet = resp.publicKey;
             document.getElementById('walletAddress').textContent = this.connectedWallet.toString();
             document.getElementById('generateWalletButton').disabled = false;
@@ -26,9 +26,11 @@ class WalletManager {
 
     async deposit() {
         const amountInput = document.getElementById('depositAmount');
-        const lamports = parseInt(amountInput.value);
-        if (!lamports || !this.connectedWallet || !this.gameWallet) return;
+        const solAmount = parseFloat(amountInput.value);
+        if (!solAmount || !this.connectedWallet || !this.gameWallet) return;
+        const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
         const connection = new web3.Connection(web3.clusterApiUrl('mainnet-beta'), 'confirmed');
+
         const tx = new web3.Transaction().add(
             web3.SystemProgram.transfer({
                 fromPubkey: this.connectedWallet,
@@ -36,6 +38,9 @@ class WalletManager {
                 lamports,
             })
         );
+        tx.feePayer = this.connectedWallet;
+        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
         const { signature } = await window.solana.signAndSendTransaction(tx);
         await connection.confirmTransaction(signature);
         this.amount = lamports;
