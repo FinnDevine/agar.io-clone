@@ -308,8 +308,10 @@ const tickGame = () => {
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
             if (playerGotEaten.escrowBalance > 0) {
-                solanaEscrow.withdraw(DEATH_BENEFICIARY, playerGotEaten.escrowBalance)
-                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, DEATH_BENEFICIARY, playerGotEaten.escrowBalance))
+                const killer = map.players.data[eater.playerIndex];
+                const beneficiary = killer && killer.walletAddress ? killer.walletAddress : DEATH_BENEFICIARY;
+                solanaEscrow.withdraw(beneficiary, playerGotEaten.escrowBalance)
+                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, beneficiary, playerGotEaten.escrowBalance))
                     .catch((e) => console.error('Transfer failed', e));
                 playerGotEaten.escrowBalance = 0;
             }
