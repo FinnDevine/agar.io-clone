@@ -10,6 +10,8 @@ const SAT = require('sat');
 const gameLogic = require('./game-logic');
 const loggingRepositry = require('./repositories/logging-repository');
 const chatRepository = require('./repositories/chat-repository');
+const escrowRepository = require('./repositories/escrow-repository');
+const solanaEscrow = require('./lib/solana-escrow');
 const config = require('../../config');
 const util = require('./lib/util');
 const mapUtils = require('./map/map');
@@ -52,7 +54,7 @@ function generateSpawnpoint() {
 const addPlayer = (socket) => {
     var currentPlayer = new mapUtils.playerUtils.Player(socket.id);
 
-    socket.on('gotit', function (clientPlayerData) {
+    socket.on('gotit', async function (clientPlayerData) {
         console.log('[INFO] Player ' + clientPlayerData.name + ' connecting!');
         currentPlayer.init(generateSpawnpoint(), config.defaultPlayerMass);
 
@@ -62,7 +64,22 @@ const addPlayer = (socket) => {
         } else if (!util.validNick(clientPlayerData.name)) {
             socket.emit('kick', 'Invalid username.');
             socket.disconnect();
+        } else if (!clientPlayerData.depositSecret || !clientPlayerData.wallet || !clientPlayerData.amount) {
+            socket.emit('kick', 'Deposit required.');
+            socket.disconnect();
         } else {
+            try {
+                await solanaEscrow.deposit(clientPlayerData.depositSecret, clientPlayerData.amount);
+                await escrowRepository.recordDeposit(currentPlayer.id, clientPlayerData.wallet, clientPlayerData.amount);
+                currentPlayer.walletAddress = clientPlayerData.wallet;
+                currentPlayer.escrowBalance = clientPlayerData.amount;
+            } catch (e) {
+                console.error('Deposit failed', e);
+                socket.emit('kick', 'Deposit failed');
+                socket.disconnect();
+                return;
+            }
+
             console.log('[INFO] Player ' + clientPlayerData.name + ' connected!');
             sockets[socket.id] = socket;
 
@@ -93,6 +110,20 @@ const addPlayer = (socket) => {
             height: config.gameHeight
         });
         console.log('[INFO] User ' + currentPlayer.name + ' has respawned');
+    });
+
+    socket.on('withdraw', async () => {
+        if (currentPlayer.escrowBalance > 0) {
+            try {
+                await solanaEscrow.withdraw(currentPlayer.walletAddress, currentPlayer.escrowBalance);
+                await escrowRepository.recordWithdrawal(currentPlayer.id, currentPlayer.walletAddress, currentPlayer.escrowBalance);
+                currentPlayer.escrowBalance = 0;
+                socket.emit('serverMSG', 'Withdrawal complete');
+            } catch (e) {
+                console.error('Withdraw failed', e);
+                socket.emit('serverMSG', 'Withdraw failed');
+            }
+        }
     });
 
     socket.on('disconnect', () => {
@@ -275,6 +306,13 @@ const tickGame = () => {
         const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
+            let killer = map.players.data[eater.playerIndex];
+            if (playerGotEaten.escrowBalance > 0 && killer.walletAddress) {
+                solanaEscrow.withdraw(killer.walletAddress, playerGotEaten.escrowBalance)
+                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, killer.walletAddress, playerGotEaten.escrowBalance))
+                    .catch((e) => console.error('Transfer failed', e));
+                playerGotEaten.escrowBalance = 0;
+            }
             io.emit('playerDied', { name: playerGotEaten.name }); //TODO: on client it is `playerEatenName` instead of `name`
             sockets[playerGotEaten.id].emit('RIP');
             map.players.removePlayerByIndex(gotEaten.playerIndex);
