@@ -11,6 +11,7 @@ module.exports = {
     KEY_DOWN: 40,
     borderDraw: false,
     mobile: false,
+    depositData: null,
     // Canvas
     screen: {
         width: window.innerWidth,
