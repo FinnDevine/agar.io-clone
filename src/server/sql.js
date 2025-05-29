@@ -47,6 +47,21 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CR
           console.log("Created chat_messages table");
         }
       });
+
+      db.run(`CREATE TABLE IF NOT EXISTS escrow_records (
+        player_id TEXT,
+        wallet TEXT,
+        amount REAL,
+        type TEXT,
+        timestamp INTEGER
+      )`, (err) => {
+        if (err) {
+          console.error(err);
+        }
+        else {
+          console.log("Created escrow_records table");
+        }
+      });
     });
   }
 });
