@@ -1,4 +1,5 @@
 const web3 = require('@solana/web3.js');
+const global = require('./global');
 
 class WalletManager {
     constructor() {
@@ -25,6 +26,9 @@ class WalletManager {
     }
 
     async deposit() {
+        if (!this.connectedWallet) {
+            await this.connect();
+        }
         const amountInput = document.getElementById('depositAmount');
         const solAmount = parseFloat(amountInput.value);
         if (!solAmount || !this.connectedWallet || !this.gameWallet) return;
@@ -44,6 +48,7 @@ class WalletManager {
         const { signature } = await window.solana.signAndSendTransaction(tx);
         await connection.confirmTransaction(signature);
         this.amount = lamports;
+        global.depositData = this.getPlayerData();
         alert('Deposit sent');
     }
 
