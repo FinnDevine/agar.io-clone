@@ -250,6 +250,10 @@ div {
     font-size : 12px;
 }
 
+#walletArea {
+    margin-bottom: 10px;
+}
+
 #startMenuWrapper {
     z-index: 2;
 }

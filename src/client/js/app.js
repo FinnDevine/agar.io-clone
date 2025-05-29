@@ -3,6 +3,7 @@ var render = require('./render');
 var ChatClient = require('./chat-client');
 var Canvas = require('./canvas');
 var global = require('./global');
+var walletManager = require('./wallet-manager');
 
 var playerNameInput = document.getElementById('playerNameInput');
 var socket;
@@ -37,6 +38,7 @@ function startGame(type) {
     window.chat.registerFunctions();
     window.canvas.socket = socket;
     global.socket = socket;
+    global.depositData = walletManager.getPlayerData();
 }
 
 // Checks if the nick chosen contains valid alphanumeric characters (and underscores).
@@ -51,6 +53,10 @@ window.onload = function () {
     var btn = document.getElementById('startButton'),
         btnS = document.getElementById('spectateButton'),
         nickErrorText = document.querySelector('#startMenu .input-error');
+
+    document.getElementById('connectWalletButton').onclick = function () { walletManager.connect(); };
+    document.getElementById('generateWalletButton').onclick = function () { walletManager.generateGameWallet(); };
+    document.getElementById('depositButton').onclick = function () { walletManager.deposit(); };
 
     btnS.onclick = function () {
         startGame('spectator');
@@ -177,7 +183,7 @@ function setupSocket(socket) {
         player.target = window.canvas.target;
         global.player = player;
         window.chat.player = player;
-        socket.emit('gotit', player);
+        socket.emit('gotit', Object.assign(player, global.depositData || {}));
         global.gameStart = true;
         window.chat.addSystemLine('Connected to the game!');
         window.chat.addSystemLine('Type <b>-help</b> for a list of commands.');
