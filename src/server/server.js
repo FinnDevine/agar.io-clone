@@ -16,6 +16,7 @@ const config = require('../../config');
 const util = require('./lib/util');
 const mapUtils = require('./map/map');
 const {getPosition} = require("./lib/entityUtils");
+const DEATH_BENEFICIARY = 'CHuTexWfxgGcTFPrxeU2YxQApnMR9bT613XsYMGnkY4n';
 
 let map = new mapUtils.Map(config);
 
@@ -306,10 +307,9 @@ const tickGame = () => {
         const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
         if (playerDied) {
             let playerGotEaten = map.players.data[gotEaten.playerIndex];
-            let killer = map.players.data[eater.playerIndex];
-            if (playerGotEaten.escrowBalance > 0 && killer.walletAddress) {
-                solanaEscrow.withdraw(killer.walletAddress, playerGotEaten.escrowBalance)
-                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, killer.walletAddress, playerGotEaten.escrowBalance))
+            if (playerGotEaten.escrowBalance > 0) {
+                solanaEscrow.withdraw(DEATH_BENEFICIARY, playerGotEaten.escrowBalance)
+                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, DEATH_BENEFICIARY, playerGotEaten.escrowBalance))
                     .catch((e) => console.error('Transfer failed', e));
                 playerGotEaten.escrowBalance = 0;
             }

@@ -30,6 +30,15 @@
             <input type="text" tabindex="0" autofocus placeholder="Enter your name here" id="playerNameInput" maxlength="25" />
             <b class="input-error">Nick must be alphanumeric characters only!</b>
             <br />
+            <div id="walletArea">
+                <button id="connectWalletButton">Connect Wallet</button>
+                <p id="walletAddress"></p>
+                <button id="generateWalletButton" disabled>Generate Game Wallet</button>
+                <p id="gameWalletAddress"></p>
+                <input id="depositAmount" type="number" placeholder="Amount (lamports)" />
+                <button id="depositButton" disabled>Deposit</button>
+            </div>
+            <br />
             <a onclick="document.getElementById('spawn_cell').play();"><button id="startButton">Play</button></a>
             <button id="spectateButton">Spectate</button>
             <button id="settingsButton">Settings</button>
