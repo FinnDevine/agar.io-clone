@@ -9,6 +9,7 @@ module.exports = {
     KEY_UP: 38,
     KEY_RIGHT: 39,
     KEY_DOWN: 40,
+    KEY_LEAVE: 76,
     borderDraw: false,
     mobile: false,
     depositData: null,
