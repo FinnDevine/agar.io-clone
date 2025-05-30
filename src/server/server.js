@@ -389,7 +389,8 @@ const updateSpectator = (socketID) => {
         massTotal: 0,
         hue: 100,
         id: socketID,
-        name: ''
+        name: '',
+        escrowBalance: 0
     };
     sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
     if (leaderboardChanged) {
