@@ -13,6 +13,8 @@ exports.Map = class {
         this.viruses = new exports.virusUtils.VirusManager(config.virus);
         this.massFood = new exports.massFoodUtils.MassFoodManager();
         this.players = new exports.playerUtils.PlayerManager();
+        this.leaderboard = [];
+        this.leaderboardChanged = false;
     }
 
     balanceMass(foodMass, gameMass, maxFood, maxVirus) {
@@ -53,7 +55,31 @@ exports.Map = class {
                     name: player.name,
                     escrowBalance: player.escrowBalance,
                     walletBalance: player.walletBalance
-                };
+};
+
+exports.MapManager = class {
+    constructor(config) {
+        this.config = config;
+        this.maps = {};
+    }
+
+    getMap(key) {
+        if (!this.maps[key]) {
+            this.maps[key] = new exports.Map(this.config);
+        }
+        return this.maps[key];
+    }
+
+    deleteMap(key) {
+        delete this.maps[key];
+    }
+
+    forEach(callback) {
+        for (let key in this.maps) {
+            callback(this.maps[key], key);
+        }
+    }
+};
             }
 
             var visiblePlayers = [];
@@ -69,5 +95,22 @@ exports.Map = class {
 
             callback(extractData(currentPlayer), visiblePlayers, visibleFood, visibleMass, visibleViruses);
         }
+    }
+
+    updateLeaderboard() {
+        const topPlayers = this.players.getTopPlayers();
+        if (this.leaderboard.length !== topPlayers.length) {
+            this.leaderboard = topPlayers;
+            this.leaderboardChanged = true;
+        } else {
+            for (let i = 0; i < this.leaderboard.length; i++) {
+                if (this.leaderboard[i].id !== topPlayers[i].id) {
+                    this.leaderboard = topPlayers;
+                    this.leaderboardChanged = true;
+                    return;
+                }
+            }
+        }
+        // no change
     }
 }
