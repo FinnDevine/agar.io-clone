@@ -56,7 +56,15 @@ async function deposit(fromSecret, amountLamports) {
         toPubkey: escrowPublicKey,
         lamports: amountLamports,
     }));
-    await sendAndConfirmTransaction(connection, tx, [from]);
+    try {
+        await sendAndConfirmTransaction(connection, tx, [from]);
+    } catch (e) {
+        if (e && typeof e.getLogs === 'function') {
+            const logs = await e.getLogs(connection);
+            console.error('Deposit transaction logs:', logs);
+        }
+        throw e;
+    }
 }
 
 async function withdraw(toPublic, amountLamports) {
@@ -67,7 +75,15 @@ async function withdraw(toPublic, amountLamports) {
         toPubkey,
         lamports: amountLamports,
     }));
-    await sendAndConfirmTransaction(connection, tx, [escrowKeypair]);
+    try {
+        await sendAndConfirmTransaction(connection, tx, [escrowKeypair]);
+    } catch (e) {
+        if (e && typeof e.getLogs === 'function') {
+            const logs = await e.getLogs(connection);
+            console.error('Withdraw transaction logs:', logs);
+        }
+        throw e;
+    }
 }
 
 module.exports = {
