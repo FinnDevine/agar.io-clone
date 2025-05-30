@@ -54,7 +54,10 @@ class WalletManager {
 
         const feeBuffer = 10000;
         const minBalance = await connection.getMinimumBalanceForRentExemption(0);
-        const depositLamports = lamports + minBalance + feeBuffer;
+        let depositLamports = lamports + feeBuffer;
+        if (depositLamports < minBalance) {
+            depositLamports = minBalance;
+        }
 
 
         const tx = new web3.Transaction().add(
@@ -69,20 +72,26 @@ class WalletManager {
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-        tx.partialSign(this.gameWallet);
+
+        const depositButton = document.getElementById('depositButton');
+        const startButton = document.getElementById('startButton');
+        if (depositButton) depositButton.disabled = true;
+        if (startButton) startButton.disabled = true;
 
         try {
-            const signedTx = await window.solana.signTransaction(tx);
-            const signature = await connection.sendRawTransaction(signedTx.serialize());
-            await connection.confirmTransaction(signature);
+            const { signature } = await window.solana.signAndSendTransaction(tx);
+            await connection.confirmTransaction(signature, 'finalized');
             this.amount = lamports;
             this.solAmount = solAmount;
             global.depositData = this.getPlayerData();
             alert('Deposit sent');
+            if (startButton) startButton.disabled = false;
         } catch (e) {
             console.error('Deposit failed', e);
             alert('Deposit failed');
+            if (startButton) startButton.disabled = false;
         }
+        if (depositButton) depositButton.disabled = false;
     }
 
     getPlayerData() {
