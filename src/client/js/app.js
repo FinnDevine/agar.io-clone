@@ -156,7 +156,19 @@ $("#split").click(function () {
 
 function handleDisconnect() {
     socket.close();
-    if (!global.kicked) { // We have a more specific error message 
+    global.gameStart = false;
+    if (global.leftGame) {
+        render.drawErrorMessage('You left the game', graph, global.screen);
+        window.setTimeout(() => {
+            document.getElementById('gameAreaWrapper').style.opacity = 0;
+            document.getElementById('startMenuWrapper').style.maxHeight = '1000px';
+            if (global.animLoopHandle) {
+                window.cancelAnimationFrame(global.animLoopHandle);
+                global.animLoopHandle = undefined;
+            }
+            global.leftGame = false;
+        }, 1000);
+    } else if (!global.kicked) { // We have a more specific error message
         render.drawErrorMessage('Disconnected!', graph, global.screen);
     }
 }

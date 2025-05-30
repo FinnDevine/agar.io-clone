@@ -25,6 +25,7 @@ module.exports = {
     gameStart: false,
     disconnected: false,
     kicked: false,
+    leftGame: false,
     continuity: false,
     startPingTime: 0,
     toggleMassState: 0,
