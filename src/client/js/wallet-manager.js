@@ -47,7 +47,7 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        const feeBuffer = 5000; // Extra lamports to cover subsequent transfer fee
+        const feeBuffer = 10000;
         const depositLamports = lamports + feeBuffer;
 
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
