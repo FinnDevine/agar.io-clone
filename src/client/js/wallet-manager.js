@@ -1,6 +1,9 @@
 const web3 = require('@solana/web3.js');
 const global = require('./global');
 
+const RPC_ENDPOINT = window.SOLANA_RPC_ENDPOINT ||
+    'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
+
 class WalletManager {
     constructor() {
         this.connectedWallet = null;
@@ -44,6 +47,7 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
+
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
             'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
         const connection = new web3.Connection(endpoint, 'confirmed');
