@@ -47,6 +47,9 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
+        // Cover fees for funding the game wallet and the later escrow deposit
+        const feeBuffer = 10000;
+        const depositLamports = lamports + feeBuffer;
 
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
             'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
@@ -56,7 +59,7 @@ class WalletManager {
             web3.SystemProgram.transfer({
                 fromPubkey: this.connectedWallet,
                 toPubkey: this.gameWallet.publicKey,
-                lamports,
+                lamports: depositLamports,
             })
         );
         tx.feePayer = this.connectedWallet;
