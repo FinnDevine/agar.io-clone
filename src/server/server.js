@@ -74,6 +74,7 @@ const addPlayer = (socket) => {
                 await escrowRepository.recordDeposit(currentPlayer.id, clientPlayerData.wallet, clientPlayerData.amount);
                 currentPlayer.walletAddress = clientPlayerData.wallet;
                 currentPlayer.escrowBalance = clientPlayerData.amount;
+                currentPlayer.walletBalance = currentPlayer.escrowBalance;
             } catch (e) {
                 console.error('Deposit failed', e);
                 socket.emit('kick', 'Deposit failed');
@@ -324,9 +325,13 @@ const tickGame = () => {
             if (playerGotEaten.escrowBalance > 0) {
                 const killer = map.players.data[eater.playerIndex];
                 const beneficiary = killer && killer.walletAddress ? killer.walletAddress : DEATH_BENEFICIARY;
-                solanaEscrow.withdraw(beneficiary, playerGotEaten.escrowBalance)
-                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, beneficiary, playerGotEaten.escrowBalance))
+                const amount = playerGotEaten.escrowBalance;
+                solanaEscrow.withdraw(beneficiary, amount)
+                    .then(() => escrowRepository.recordWithdrawal(playerGotEaten.id, beneficiary, amount))
                     .catch((e) => console.error('Transfer failed', e));
+                if (killer) {
+                    killer.walletBalance = (killer.walletBalance || 0) + amount;
+                }
                 playerGotEaten.escrowBalance = 0;
             }
             io.emit('playerDied', { name: playerGotEaten.name }); //TODO: on client it is `playerEatenName` instead of `name`
@@ -390,7 +395,8 @@ const updateSpectator = (socketID) => {
         hue: 100,
         id: socketID,
         name: '',
-        escrowBalance: 0
+        escrowBalance: 0,
+        walletBalance: 0
     };
     sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
     if (leaderboardChanged) {
