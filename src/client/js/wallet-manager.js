@@ -47,7 +47,6 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        // Cover fees for funding the game wallet and the later escrow deposit
         const feeBuffer = 10000;
         const depositLamports = lamports + feeBuffer;
 
