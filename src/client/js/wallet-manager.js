@@ -47,25 +47,31 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        const feeBuffer = 10000;
-        const depositLamports = lamports + feeBuffer;
-
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
             'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
         const connection = new web3.Connection(endpoint, 'confirmed');
 
+        const feeBuffer = 10000;
+        const minBalance = await connection.getMinimumBalanceForRentExemption(0);
+        const depositLamports = lamports + minBalance + feeBuffer;
+
         const tx = new web3.Transaction().add(
-            web3.SystemProgram.transfer({
+            web3.SystemProgram.createAccount({
                 fromPubkey: this.connectedWallet,
-                toPubkey: this.gameWallet.publicKey,
+                newAccountPubkey: this.gameWallet.publicKey,
                 lamports: depositLamports,
+                space: 0,
+                programId: web3.SystemProgram.programId,
             })
         );
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
+        tx.partialSign(this.gameWallet);
+
         try {
-            const { signature } = await window.solana.signAndSendTransaction(tx);
+            const signedTx = await window.solana.signTransaction(tx);
+            const signature = await connection.sendRawTransaction(signedTx.serialize());
             await connection.confirmTransaction(signature);
             this.amount = lamports;
             global.depositData = this.getPlayerData();
