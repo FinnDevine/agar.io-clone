@@ -171,6 +171,8 @@ function handleDisconnect() {
     } else if (!global.kicked) { // We have a more specific error message
         render.drawErrorMessage('Disconnected!', graph, global.screen);
     }
+    socket = undefined;
+    global.socket = undefined;
 }
 
 // socket stuff.
