@@ -89,6 +89,9 @@ docker build -t agarioclone_agar .
 docker run -it -p 3000:3000 agarioclone_agar
 ```
 
+### Solana Escrow Setup
+Set `ESCROW_PUBLIC_KEY` and optionally `ESCROW_SECRET_KEY` in your environment when starting the server. The values may be JSON arrays (as produced by `solana-keygen`) or base58 encoded strings. Providing the secret key enables withdrawals from the escrow account.
+
 ---
 
 ## FAQ
