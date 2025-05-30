@@ -58,15 +58,19 @@ class WalletManager {
             depositLamports = minBalance;
         }
 
+
         const tx = new web3.Transaction().add(
-            web3.SystemProgram.transfer({
+            web3.SystemProgram.createAccount({
                 fromPubkey: this.connectedWallet,
-                toPubkey: this.gameWallet.publicKey,
+                newAccountPubkey: this.gameWallet.publicKey,
                 lamports: depositLamports,
+                space: 0,
+                programId: web3.SystemProgram.programId,
             })
         );
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
 
         const depositButton = document.getElementById('depositButton');
         const startButton = document.getElementById('startButton');
