@@ -54,7 +54,31 @@ exports.Map = class {
                     name: player.name,
                     escrowBalance: player.escrowBalance,
                     walletBalance: player.walletBalance
-                };
+};
+
+exports.MapManager = class {
+    constructor(config) {
+        this.config = config;
+        this.maps = {};
+    }
+
+    getMap(key) {
+        if (!this.maps[key]) {
+            this.maps[key] = new exports.Map(this.config);
+        }
+        return this.maps[key];
+    }
+
+    deleteMap(key) {
+        delete this.maps[key];
+    }
+
+    forEach(callback) {
+        for (let key in this.maps) {
+            callback(this.maps[key], key);
+        }
+    }
+};
             }
 
             var visiblePlayers = [];

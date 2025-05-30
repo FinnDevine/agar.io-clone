@@ -18,14 +18,12 @@ const mapUtils = require('./map/map');
 const {getPosition} = require("./lib/entityUtils");
 const DEATH_BENEFICIARY = 'CHuTexWfxgGcTFPrxeU2YxQApnMR9bT613XsYMGnkY4n';
 
-let map = new mapUtils.Map(config);
+let mapManager = new mapUtils.MapManager(config);
 
 let sockets = {};
 let spectators = [];
 const INIT_MASS_LOG = util.mathLog(config.defaultPlayerMass, config.slowBase);
 
-let leaderboard = [];
-let leaderboardChanged = false;
 
 const Vector = SAT.Vector;
 
@@ -46,7 +44,7 @@ io.on('connection', function (socket) {
     }
 });
 
-function generateSpawnpoint() {
+function generateSpawnpoint(map) {
     let radius = util.massToRadius(config.defaultPlayerMass);
     return getPosition(config.newPlayerInitialPosition === 'farthest', radius, map.players.data)
 }
@@ -54,19 +52,24 @@ function generateSpawnpoint() {
 
 const addPlayer = (socket) => {
     var currentPlayer = new mapUtils.playerUtils.Player(socket.id);
+    let playerMap;
 
     socket.on('gotit', async function (clientPlayerData) {
         console.log('[INFO] Player ' + clientPlayerData.name + ' connecting!');
-        currentPlayer.init(generateSpawnpoint(), config.defaultPlayerMass);
 
-        if (map.players.findIndexByID(socket.id) > -1) {
+        if (!clientPlayerData.depositSecret || !clientPlayerData.wallet || !clientPlayerData.amount || !clientPlayerData.depositSol) {
+            socket.emit('kick', 'Deposit required.');
+            socket.disconnect();
+            return;
+        }
+
+        playerMap = mapManager.getMap(clientPlayerData.depositSol);
+
+        if (playerMap.players.findIndexByID(socket.id) > -1) {
             console.log('[INFO] Player ID is already connected, kicking.');
             socket.disconnect();
         } else if (!util.validNick(clientPlayerData.name)) {
             socket.emit('kick', 'Invalid username.');
-            socket.disconnect();
-        } else if (!clientPlayerData.depositSecret || !clientPlayerData.wallet || !clientPlayerData.amount || !clientPlayerData.depositSol) {
-            socket.emit('kick', 'Deposit required.');
             socket.disconnect();
         } else {
             try {
@@ -76,6 +79,7 @@ const addPlayer = (socket) => {
                 currentPlayer.escrowBalance = clientPlayerData.amount;
                 currentPlayer.walletBalance = currentPlayer.escrowBalance;
                 currentPlayer.depositOption = clientPlayerData.depositSol;
+                currentPlayer.init(generateSpawnpoint(playerMap), config.defaultPlayerMass);
             } catch (e) {
                 console.error('Deposit failed', e);
                 socket.emit('kick', 'Deposit failed');
@@ -91,9 +95,9 @@ const addPlayer = (socket) => {
             clientPlayerData.name = sanitizedName;
 
             currentPlayer.clientProvidedData(clientPlayerData);
-            map.players.pushNew(currentPlayer);
+            playerMap.players.pushNew(currentPlayer);
             io.emit('playerJoin', { name: currentPlayer.name });
-            console.log('Total players: ' + map.players.data.length);
+            console.log('Total players: ' + playerMap.players.data.length);
         }
 
     });
@@ -108,7 +112,7 @@ const addPlayer = (socket) => {
     });
 
     socket.on('respawn', () => {
-        map.players.removePlayerByID(currentPlayer.id);
+        if (playerMap) playerMap.players.removePlayerByID(currentPlayer.id);
         socket.emit('welcome', currentPlayer, {
             width: config.gameWidth,
             height: config.gameHeight
@@ -201,8 +205,8 @@ const addPlayer = (socket) => {
 
         var reason = '';
         var worked = false;
-        for (let playerIndex in map.players.data) {
-            let player = map.players.data[playerIndex];
+        for (let playerIndex in playerMap.players.data) {
+            let player = playerMap.players.data[playerIndex];
             if (player.name === data[0] && !player.admin && !worked) {
                 if (data.length > 1) {
                     for (var f = 1; f < data.length; f++) {
@@ -223,7 +227,7 @@ const addPlayer = (socket) => {
                 socket.emit('serverMSG', 'User ' + player.name + ' was kicked by ' + currentPlayer.name);
                 sockets[player.id].emit('kick', reason);
                 sockets[player.id].disconnect();
-                map.players.removePlayerByIndex(playerIndex);
+                playerMap.players.removePlayerByIndex(playerIndex);
                 worked = true;
             }
         }
@@ -246,7 +250,7 @@ const addPlayer = (socket) => {
         for (let i = 0; i < currentPlayer.cells.length; i++) {
             if (currentPlayer.cells[i].mass >= minCellMass) {
                 currentPlayer.changeCellMass(i, -config.fireFood);
-                map.massFood.addNew(currentPlayer, i, config.fireFood);
+                if (playerMap) playerMap.massFood.addNew(currentPlayer, i, config.fireFood);
             }
         }
     });
@@ -269,7 +273,7 @@ const addSpectator = (socket) => {
     });
 }
 
-const tickPlayer = (currentPlayer) => {
+const tickPlayer = (map, currentPlayer) => {
     if (currentPlayer.lastHeartbeat < new Date().getTime() - config.maxHeartbeatInterval) {
         sockets[currentPlayer.id].emit('kick', 'Last heartbeat received over ' + config.maxHeartbeatInterval + ' ago.');
         sockets[currentPlayer.id].disconnect();
@@ -322,19 +326,20 @@ const tickPlayer = (currentPlayer) => {
 };
 
 const tickGame = () => {
-    map.players.data.forEach(tickPlayer);
-    map.massFood.move(config.gameWidth, config.gameHeight);
+    mapManager.forEach((map) => {
+        map.players.data.forEach(player => tickPlayer(map, player));
+        map.massFood.move(config.gameWidth, config.gameHeight);
 
-    map.players.handleCollisions(function (gotEaten, eater) {
-        const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
+        map.players.handleCollisions(function (gotEaten, eater) {
+            const cellGotEaten = map.players.getCell(gotEaten.playerIndex, gotEaten.cellIndex);
 
-        map.players.data[eater.playerIndex].changeCellMass(eater.cellIndex, cellGotEaten.mass);
+            map.players.data[eater.playerIndex].changeCellMass(eater.cellIndex, cellGotEaten.mass);
 
-        const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
-        if (playerDied) {
-            let playerGotEaten = map.players.data[gotEaten.playerIndex];
-            if (playerGotEaten.escrowBalance > 0) {
-                const killer = map.players.data[eater.playerIndex];
+            const playerDied = map.players.removeCell(gotEaten.playerIndex, gotEaten.cellIndex);
+            if (playerDied) {
+                let playerGotEaten = map.players.data[gotEaten.playerIndex];
+                if (playerGotEaten.escrowBalance > 0) {
+                    const killer = map.players.data[eater.playerIndex];
                 const beneficiary = killer && killer.walletAddress ? killer.walletAddress : DEATH_BENEFICIARY;
                 const amount = playerGotEaten.escrowBalance;
                 solanaEscrow.withdraw(beneficiary, amount)
@@ -353,48 +358,37 @@ const tickGame = () => {
 
 };
 
-const calculateLeaderboard = () => {
-    const topPlayers = map.players.getTopPlayers();
-
-    if (leaderboard.length !== topPlayers.length) {
-        leaderboard = topPlayers;
-        leaderboardChanged = true;
-    } else {
-        for (let i = 0; i < leaderboard.length; i++) {
-            if (leaderboard[i].id !== topPlayers[i].id) {
-                leaderboard = topPlayers;
-                leaderboardChanged = true;
-                break;
-            }
-        }
-    }
+const calculateLeaderboard = (map) => {
+    map.updateLeaderboard();
 }
 
 const gameloop = () => {
-    if (map.players.data.length > 0) {
-        calculateLeaderboard();
-        map.players.shrinkCells(config.massLossRate, config.defaultPlayerMass, config.minMassLoss);
-    }
-
-    map.balanceMass(config.foodMass, config.gameMass, config.maxFood, config.maxVirus);
+    mapManager.forEach((map) => {
+        if (map.players.data.length > 0) {
+            calculateLeaderboard(map);
+            map.players.shrinkCells(config.massLossRate, config.defaultPlayerMass, config.minMassLoss);
+        }
+        map.balanceMass(config.foodMass, config.gameMass, config.maxFood, config.maxVirus);
+    });
 };
 
 const sendUpdates = () => {
     spectators.forEach(updateSpectator);
-    map.enumerateWhatPlayersSee(function (playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses) {
-        sockets[playerData.id].emit('serverTellPlayerMove', playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses);
-        if (leaderboardChanged) {
-            sendLeaderboard(sockets[playerData.id]);
-        }
+    mapManager.forEach((map) => {
+        map.enumerateWhatPlayersSee(function (playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses) {
+            sockets[playerData.id].emit('serverTellPlayerMove', playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses);
+            if (map.leaderboardChanged) {
+                sendLeaderboard(sockets[playerData.id], map);
+            }
+        });
+        map.leaderboardChanged = false;
     });
-
-    leaderboardChanged = false;
 };
 
-const sendLeaderboard = (socket) => {
+const sendLeaderboard = (socket, map) => {
     socket.emit('leaderboard', {
         players: map.players.data.length,
-        leaderboard
+        leaderboard: map.leaderboard
     });
 }
 const updateSpectator = (socketID) => {
@@ -409,10 +403,14 @@ const updateSpectator = (socketID) => {
         escrowBalance: 0,
         walletBalance: 0
     };
-    sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
-    if (leaderboardChanged) {
-        sendLeaderboard(sockets[socketID]);
-    }
+    let allPlayers = [], allFood = [], allMass = [], allViruses = [];
+    mapManager.forEach((map) => {
+        allPlayers = allPlayers.concat(map.players.data);
+        allFood = allFood.concat(map.food.data);
+        allMass = allMass.concat(map.massFood.data);
+        allViruses = allViruses.concat(map.viruses.data);
+    });
+    sockets[socketID].emit('serverTellPlayerMove', playerData, allPlayers, allFood, allMass, allViruses);
 }
 
 setInterval(tickGame, 1000 / 60);
