@@ -127,6 +127,20 @@ const addPlayer = (socket) => {
         }
     });
 
+    socket.on('leaveGame', async () => {
+        if (currentPlayer.escrowBalance > 0) {
+            try {
+                await solanaEscrow.withdraw(currentPlayer.walletAddress, currentPlayer.escrowBalance);
+                await escrowRepository.recordWithdrawal(currentPlayer.id, currentPlayer.walletAddress, currentPlayer.escrowBalance);
+                currentPlayer.escrowBalance = 0;
+            } catch (e) {
+                console.error('Withdraw failed', e);
+                socket.emit('serverMSG', 'Withdraw failed');
+            }
+        }
+        socket.disconnect();
+    });
+
     socket.on('disconnect', () => {
         map.players.removePlayerByID(currentPlayer.id);
         console.log('[INFO] User ' + currentPlayer.name + ' has disconnected');

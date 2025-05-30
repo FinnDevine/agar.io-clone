@@ -7,6 +7,7 @@ class Canvas {
         this.reenviar = true;
         this.socket = global.socket;
         this.directions = [];
+        this.leaveTimer = null;
         var self = this;
 
         this.cv = document.getElementById('cvs');
@@ -18,6 +19,10 @@ class Canvas {
         this.cv.addEventListener('keyup', function(event) {
             self.reenviar = true;
             self.directionUp(event);
+            if ((event.which || event.keyCode) === global.KEY_LEAVE && self.leaveTimer) {
+                clearTimeout(self.leaveTimer);
+                self.leaveTimer = null;
+            }
         }, false);
         this.cv.addEventListener('keydown', this.directionDown, false);
         this.cv.addEventListener('touchstart', this.touchInput, false);
@@ -28,27 +33,40 @@ class Canvas {
 
     // Function called when a key is pressed, will change direction if arrow key.
     directionDown(event) {
-    	var key = event.which || event.keyCode;
+        var key = event.which || event.keyCode;
         var self = this.parent; // have to do this so we are not using the cv object
-    	if (self.directional(key)) {
-    		self.directionLock = true;
-    		if (self.newDirection(key, self.directions, true)) {
-    			self.updateTarget(self.directions);
-    			self.socket.emit('0', self.target);
-    		}
-    	}
+        if (key === global.KEY_LEAVE) {
+            if (!self.leaveTimer) {
+                self.leaveTimer = setTimeout(function () {
+                    self.socket.emit('leaveGame');
+                    self.leaveTimer = null;
+                }, 10000);
+            }
+        } else if (self.directional(key)) {
+            self.directionLock = true;
+            if (self.newDirection(key, self.directions, true)) {
+                self.updateTarget(self.directions);
+                self.socket.emit('0', self.target);
+            }
+        }
     }
 
     // Function called when a key is lifted, will change direction if arrow key.
     directionUp(event) {
-    	var key = event.which || event.keyCode;
-    	if (this.directional(key)) { // this == the actual class
-    		if (this.newDirection(key, this.directions, false)) {
-    			this.updateTarget(this.directions);
-    			if (this.directions.length === 0) this.directionLock = false;
-    			this.socket.emit('0', this.target);
-    		}
-    	}
+        var key = event.which || event.keyCode;
+        if (key === global.KEY_LEAVE) {
+            if (this.leaveTimer) {
+                clearTimeout(this.leaveTimer);
+                this.leaveTimer = null;
+            }
+        }
+        if (this.directional(key)) { // this == the actual class
+            if (this.newDirection(key, this.directions, false)) {
+                this.updateTarget(this.directions);
+                if (this.directions.length === 0) this.directionLock = false;
+                this.socket.emit('0', this.target);
+            }
+        }
     }
 
     // Updates the direction array including information about the new direction.
