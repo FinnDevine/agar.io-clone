@@ -347,6 +347,26 @@ exports.PlayerManager = class {
         return topPlayers;
     }
 
+    getTopPlayersByLobby() {
+        const playersByLobby = {};
+        for (const player of this.data) {
+            if (!playersByLobby[player.depositOption]) {
+                playersByLobby[player.depositOption] = [];
+            }
+            playersByLobby[player.depositOption].push(player);
+        }
+
+        const result = {};
+        for (const lobby in playersByLobby) {
+            playersByLobby[lobby].sort((a, b) => b.massTotal - a.massTotal);
+            result[lobby] = playersByLobby[lobby]
+                .slice(0, 10)
+                .map(p => ({ id: p.id, name: p.name }));
+        }
+
+        return result;
+    }
+
     getTotalMass() {
         let result = 0;
         for (let player of this.data) {

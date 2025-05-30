@@ -24,8 +24,6 @@ let sockets = {};
 let spectators = [];
 const INIT_MASS_LOG = util.mathLog(config.defaultPlayerMass, config.slowBase);
 
-let leaderboard = [];
-let leaderboardChanged = false;
 
 const Vector = SAT.Vector;
 
@@ -343,26 +341,10 @@ const tickGame = () => {
 
 };
 
-const calculateLeaderboard = () => {
-    const topPlayers = map.players.getTopPlayers();
-
-    if (leaderboard.length !== topPlayers.length) {
-        leaderboard = topPlayers;
-        leaderboardChanged = true;
-    } else {
-        for (let i = 0; i < leaderboard.length; i++) {
-            if (leaderboard[i].id !== topPlayers[i].id) {
-                leaderboard = topPlayers;
-                leaderboardChanged = true;
-                break;
-            }
-        }
-    }
-}
 
 const gameloop = () => {
     if (map.players.data.length > 0) {
-        calculateLeaderboard();
+        map.calculateLeaderboards();
         map.players.shrinkCells(config.massLossRate, config.defaultPlayerMass, config.minMassLoss);
     }
 
@@ -373,20 +355,20 @@ const sendUpdates = () => {
     spectators.forEach(updateSpectator);
     map.enumerateWhatPlayersSee(function (playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses) {
         sockets[playerData.id].emit('serverTellPlayerMove', playerData, visiblePlayers, visibleFood, visibleMass, visibleViruses);
-        if (leaderboardChanged) {
-            sendLeaderboard(sockets[playerData.id]);
+        if (map.hasLeaderboardChanged(playerData.depositOption)) {
+            sendLeaderboard(sockets[playerData.id], playerData.depositOption);
         }
     });
-
-    leaderboardChanged = false;
+    map.resetLeaderboardChanges();
 };
 
-const sendLeaderboard = (socket) => {
+const sendLeaderboard = (socket, lobby) => {
     socket.emit('leaderboard', {
-        players: map.players.data.length,
-        leaderboard
+        players: map.getLobbyPlayerCount(lobby),
+        leaderboard: map.getLeaderboard(lobby),
+        depositOption: lobby
     });
-}
+};
 const updateSpectator = (socketID) => {
     let playerData = {
         x: config.gameWidth / 2,
@@ -400,9 +382,6 @@ const updateSpectator = (socketID) => {
         walletBalance: 0
     };
     sockets[socketID].emit('serverTellPlayerMove', playerData, map.players.data, map.food.data, map.massFood.data, map.viruses.data);
-    if (leaderboardChanged) {
-        sendLeaderboard(sockets[socketID]);
-    }
 }
 
 setInterval(tickGame, 1000 / 60);

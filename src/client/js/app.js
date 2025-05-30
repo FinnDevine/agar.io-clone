@@ -228,7 +228,11 @@ function setupSocket(socket) {
 
     socket.on('leaderboard', (data) => {
         leaderboard = data.leaderboard;
-        var status = '<span class="title">Leaderboard</span>';
+        var title = 'Leaderboard';
+        if (data.depositOption !== undefined) {
+            title += ' (' + data.depositOption + ' SOL)';
+        }
+        var status = '<span class="title">' + title + '</span>';
         for (var i = 0; i < leaderboard.length; i++) {
             status += '<br />';
             if (leaderboard[i].id == player.id) {
