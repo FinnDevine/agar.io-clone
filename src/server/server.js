@@ -89,7 +89,7 @@ const addPlayer = (socket) => {
 
             console.log('[INFO] Player ' + clientPlayerData.name + ' connected!');
             sockets[socket.id] = socket;
-            map.addSocketToLobby(currentPlayer.depositOption, socket.id);
+            playerMap.addSocketToLobby(currentPlayer.depositOption, socket.id);
 
             const sanitizedName = clientPlayerData.name.replace(/(<([^>]+)>)/ig, '');
             clientPlayerData.name = sanitizedName;
@@ -145,13 +145,13 @@ const addPlayer = (socket) => {
                 socket.emit('serverMSG', 'Withdraw failed');
             }
         }
-        map.removeSocketFromLobby(currentPlayer.depositOption, socket.id);
+        playerMap.removeSocketFromLobby(currentPlayer.depositOption, socket.id);
         socket.disconnect();
     });
 
     socket.on('disconnect', () => {
-        map.players.removePlayerByID(currentPlayer.id);
-        map.removeSocketFromLobby(currentPlayer.depositOption, socket.id);
+        playerMap.players.removePlayerByID(currentPlayer.id);
+        playerMap.removeSocketFromLobby(currentPlayer.depositOption, socket.id);
         console.log('[INFO] User ' + currentPlayer.name + ' has disconnected');
         socket.broadcast.emit('playerDisconnect', { name: currentPlayer.name });
     });
@@ -164,7 +164,7 @@ const addPlayer = (socket) => {
             console.log('[CHAT] [' + (new Date()).getHours() + ':' + (new Date()).getMinutes() + '] ' + _sender + ': ' + _message);
         }
 
-        const lobbySockets = map.getLobbySockets(currentPlayer.depositOption);
+        const lobbySockets = playerMap.getLobbySockets(currentPlayer.depositOption);
         for (const id of lobbySockets) {
             if (id === socket.id) continue;
             const lobbySocket = sockets[id];

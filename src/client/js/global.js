@@ -2,6 +2,8 @@ module.exports = {
     // Keys and other mathematical constants
     KEY_ESC: 27,
     KEY_ENTER: 13,
+    KEY_OPEN_CHAT: 84,
+    KEY_CLOSE_CHAT: 27,
     KEY_CHAT: 13,
     KEY_FIREFOOD: 119,
     KEY_SPLIT: 32,
