@@ -365,6 +365,7 @@ function gameLoop() {
                     borderColor: borderColor,
                     mass: users[i].cells[j].mass,
                     name: users[i].name,
+                    wallet: users[i].escrowBalance,
                     radius: users[i].cells[j].radius,
                     x: users[i].cells[j].x - player.x + global.screen.width / 2,
                     y: users[i].cells[j].y - player.y + global.screen.height / 2

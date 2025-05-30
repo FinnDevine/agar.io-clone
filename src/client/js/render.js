@@ -1,4 +1,5 @@
 const FULL_ANGLE = 2 * Math.PI;
+const LAMPORTS_PER_SOL = 1000000000;
 
 const drawRoundObject = (position, radius, graph) => {
     graph.beginPath();
@@ -101,12 +102,25 @@ const drawCells = (cells, playerConfig, toggleMassState, borders, graph) => {
         graph.strokeText(cell.name, cell.x, cell.y);
         graph.fillText(cell.name, cell.x, cell.y);
 
+        // Wallet value below the name
+        let smallFont = Math.max(fontSize / 3 * 2, 10);
+        let offset = fontSize;
+        if (typeof cell.wallet !== 'undefined') {
+            const walletText = (cell.wallet / LAMPORTS_PER_SOL).toFixed(2) + ' SOL';
+            graph.font = 'bold ' + smallFont + 'px sans-serif';
+            graph.fillStyle = '#ff0000';
+            graph.strokeText(walletText, cell.x, cell.y + offset);
+            graph.fillText(walletText, cell.x, cell.y + offset);
+            offset += smallFont;
+            graph.fillStyle = playerConfig.textColor;
+        }
+
         // Draw the mass (if enabled)
         if (toggleMassState === 1) {
-            graph.font = 'bold ' + Math.max(fontSize / 3 * 2, 10) + 'px sans-serif';
-            if (cell.name.length === 0) fontSize = 0;
-            graph.strokeText(Math.round(cell.mass), cell.x, cell.y + fontSize);
-            graph.fillText(Math.round(cell.mass), cell.x, cell.y + fontSize);
+            graph.font = 'bold ' + smallFont + 'px sans-serif';
+            if (cell.name.length === 0 && typeof cell.wallet === 'undefined') offset = 0;
+            graph.strokeText(Math.round(cell.mass), cell.x, cell.y + offset);
+            graph.fillText(Math.round(cell.mass), cell.x, cell.y + offset);
         }
     }
 };
