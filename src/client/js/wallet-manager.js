@@ -47,12 +47,16 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        const feeBuffer = 10000;
-        const depositLamports = lamports + feeBuffer;
-
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
             'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
         const connection = new web3.Connection(endpoint, 'confirmed');
+
+        const feeBuffer = 10000;
+        const minBalance = await connection.getMinimumBalanceForRentExemption(0);
+        let depositLamports = lamports + feeBuffer;
+        if (depositLamports < minBalance) {
+            depositLamports = minBalance;
+        }
 
         const tx = new web3.Transaction().add(
             web3.SystemProgram.transfer({
