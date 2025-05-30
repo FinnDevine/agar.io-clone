@@ -51,7 +51,8 @@ exports.Map = class {
                     hue: player.hue,
                     id: player.id,
                     name: player.name,
-                    escrowBalance: player.escrowBalance
+                    escrowBalance: player.escrowBalance,
+                    walletBalance: player.walletBalance
                 };
             }
 
