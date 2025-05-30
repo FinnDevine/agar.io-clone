@@ -53,23 +53,26 @@ class WalletManager {
 
         const feeBuffer = 10000;
         const minBalance = await connection.getMinimumBalanceForRentExemption(0);
-        let depositLamports = lamports + feeBuffer;
-        if (depositLamports < minBalance) {
-            depositLamports = minBalance;
-        }
+        const depositLamports = lamports + minBalance + feeBuffer;
+
 
         const tx = new web3.Transaction().add(
-            web3.SystemProgram.transfer({
+            web3.SystemProgram.createAccount({
                 fromPubkey: this.connectedWallet,
-                toPubkey: this.gameWallet.publicKey,
+                newAccountPubkey: this.gameWallet.publicKey,
                 lamports: depositLamports,
+                space: 0,
+                programId: web3.SystemProgram.programId,
             })
         );
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
+        tx.partialSign(this.gameWallet);
+
         try {
-            const { signature } = await window.solana.signAndSendTransaction(tx);
+            const signedTx = await window.solana.signTransaction(tx);
+            const signature = await connection.sendRawTransaction(signedTx.serialize());
             await connection.confirmTransaction(signature);
             this.amount = lamports;
             global.depositData = this.getPlayerData();
