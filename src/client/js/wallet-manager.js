@@ -47,12 +47,16 @@ class WalletManager {
             return;
         }
         const lamports = Math.round(solAmount * web3.LAMPORTS_PER_SOL);
-        const feeBuffer = 10000;
-        const depositLamports = lamports + feeBuffer;
-
         const endpoint = window.SOLANA_RPC_ENDPOINT ||
             'https://intensive-radial-frost.solana-mainnet.quiknode.pro/95b1f7a5066ab128943099999903a657c16f838a/';
         const connection = new web3.Connection(endpoint, 'confirmed');
+
+        const feeBuffer = 10000;
+        const minBalance = await connection.getMinimumBalanceForRentExemption(0);
+        let depositLamports = lamports + feeBuffer;
+        if (depositLamports < minBalance) {
+            depositLamports = minBalance;
+        }
 
         const tx = new web3.Transaction().add(
             web3.SystemProgram.transfer({
@@ -64,16 +68,24 @@ class WalletManager {
         tx.feePayer = this.connectedWallet;
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
+        const depositButton = document.getElementById('depositButton');
+        const startButton = document.getElementById('startButton');
+        if (depositButton) depositButton.disabled = true;
+        if (startButton) startButton.disabled = true;
+
         try {
             const { signature } = await window.solana.signAndSendTransaction(tx);
-            await connection.confirmTransaction(signature);
+            await connection.confirmTransaction(signature, 'finalized');
             this.amount = lamports;
             global.depositData = this.getPlayerData();
             alert('Deposit sent');
+            if (startButton) startButton.disabled = false;
         } catch (e) {
             console.error('Deposit failed', e);
             alert('Deposit failed');
+            if (startButton) startButton.disabled = false;
         }
+        if (depositButton) depositButton.disabled = false;
     }
 
     getPlayerData() {
