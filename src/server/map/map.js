@@ -13,6 +13,7 @@ exports.Map = class {
         this.viruses = new exports.virusUtils.VirusManager(config.virus);
         this.massFood = new exports.massFoodUtils.MassFoodManager();
         this.players = new exports.playerUtils.PlayerManager();
+        this.lobbies = new Map();
     }
 
     balanceMass(foodMass, gameMass, maxFood, maxVirus) {
@@ -69,5 +70,25 @@ exports.Map = class {
 
             callback(extractData(currentPlayer), visiblePlayers, visibleFood, visibleMass, visibleViruses);
         }
+    }
+
+    addSocketToLobby(depositOption, socketId) {
+        if (!this.lobbies.has(depositOption)) {
+            this.lobbies.set(depositOption, new Set());
+        }
+        this.lobbies.get(depositOption).add(socketId);
+    }
+
+    removeSocketFromLobby(depositOption, socketId) {
+        if (!this.lobbies.has(depositOption)) return;
+        const lobby = this.lobbies.get(depositOption);
+        lobby.delete(socketId);
+        if (lobby.size === 0) {
+            this.lobbies.delete(depositOption);
+        }
+    }
+
+    getLobbySockets(depositOption) {
+        return this.lobbies.get(depositOption) || new Set();
     }
 }
