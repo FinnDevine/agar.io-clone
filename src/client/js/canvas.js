@@ -190,7 +190,7 @@ class Canvas {
             this.parent.socket.emit('2');
             this.parent.reenviar = false;
         }
-        else if (key === global.KEY_CHAT) {
+        else if (key === global.KEY_OPEN_CHAT) {
             document.getElementById('chatInput').focus();
         }
     }

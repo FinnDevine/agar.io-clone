@@ -35,6 +35,13 @@ You can check out how to play on our [wiki](https://github.com/owenashurst/agar.
 - Everytime a food particle is eaten by a player, **1** new food particle will respawn.
 - The more food you eat, the slower you move to make the game fairer for all.
 
+### Controls
+- **Mouse** - move your cell
+- **W** - eject some mass
+- **Space** - split your cell
+- **T** - open chat
+- **Esc** - close chat
+
 ---
 
 ## Latest Changes

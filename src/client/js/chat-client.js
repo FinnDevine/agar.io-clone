@@ -13,7 +13,7 @@ class ChatClient {
         input.addEventListener('keyup', function(key) {
             input = document.getElementById('chatInput');
             key = key.which || key.keyCode;
-            if (key === global.KEY_ESC) {
+            if (key === global.KEY_CLOSE_CHAT) {
                 input.value = '';
                 self.canvas.cv.focus();
             }
