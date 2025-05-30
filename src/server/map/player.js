@@ -91,6 +91,7 @@ exports.Player = class {
         this.walletAddress = null;
         this.escrowBalance = 0;
         this.walletBalance = 0;
+        this.depositOption = null;
         this.screenWidth = null;
         this.screenHeight = null;
         this.timeToMerge = null;
@@ -320,9 +321,12 @@ exports.PlayerManager = class {
     handleCollisions(callback) {
         for (let playerAIndex = 0; playerAIndex < this.data.length; playerAIndex++) {
             for (let playerBIndex = playerAIndex + 1; playerBIndex < this.data.length; playerBIndex++) {
+                const playerA = this.data[playerAIndex];
+                const playerB = this.data[playerBIndex];
+                if (playerA.depositOption !== playerB.depositOption) continue;
                 exports.Player.checkForCollisions(
-                    this.data[playerAIndex],
-                    this.data[playerBIndex],
+                    playerA,
+                    playerB,
                     playerAIndex,
                     playerBIndex,
                     callback

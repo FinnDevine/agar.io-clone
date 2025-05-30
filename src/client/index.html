@@ -36,7 +36,11 @@
                 <p id="walletAddress"></p>
                 <button id="generateWalletButton" disabled>Generate Game Wallet</button>
                 <p id="gameWalletAddress"></p>
-                <input id="depositAmount" type="number" placeholder="Amount (SOL)" step="0.000000001" />
+                <select id="depositAmount">
+                    <option value="0.01">0.01 SOL</option>
+                    <option value="0.1">0.1 SOL</option>
+                    <option value="0.5">0.5 SOL</option>
+                </select>
                 <button id="depositButton" disabled>Deposit</button>
             </div>
             <br />

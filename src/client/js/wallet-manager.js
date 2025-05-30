@@ -9,6 +9,7 @@ class WalletManager {
         this.connectedWallet = null;
         this.gameWallet = null;
         this.amount = 0;
+        this.solAmount = 0;
     }
 
     async connect() {
@@ -75,6 +76,7 @@ class WalletManager {
             const signature = await connection.sendRawTransaction(signedTx.serialize());
             await connection.confirmTransaction(signature);
             this.amount = lamports;
+            this.solAmount = solAmount;
             global.depositData = this.getPlayerData();
             alert('Deposit sent');
         } catch (e) {
@@ -89,6 +91,7 @@ class WalletManager {
             depositSecret: JSON.stringify(Array.from(this.gameWallet.secretKey)),
             wallet: this.connectedWallet.toString(),
             amount: this.amount,
+            depositSol: this.solAmount,
         };
     }
 }

@@ -58,6 +58,7 @@ exports.Map = class {
 
             var visiblePlayers = [];
             for (let player of this.players.data) {
+                if (player.depositOption !== currentPlayer.depositOption) continue;
                 for (let cell of player.cells) {
                     if (isVisibleEntity(cell, currentPlayer)) {
                         visiblePlayers.push(extractData(player));
