@@ -48,6 +48,7 @@ const escrowPublicKey = ESCROW_PUBLIC ? new PublicKey(ESCROW_PUBLIC) : (escrowKe
 async function deposit(fromSecret, amountLamports) {
     if (!escrowPublicKey) throw new Error('Escrow public key not configured');
     const from = Keypair.fromSecretKey(parseSecretKey(fromSecret));
+
     const tx = new Transaction().add(SystemProgram.transfer({
         fromPubkey: from.publicKey,
         toPubkey: escrowPublicKey,
