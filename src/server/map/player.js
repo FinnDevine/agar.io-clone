@@ -90,6 +90,7 @@ exports.Player = class {
         this.admin = false;
         this.walletAddress = null;
         this.escrowBalance = 0;
+        this.walletBalance = 0;
         this.screenWidth = null;
         this.screenHeight = null;
         this.timeToMerge = null;
