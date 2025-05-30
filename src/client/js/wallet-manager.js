@@ -55,6 +55,7 @@ class WalletManager {
         const minBalance = await connection.getMinimumBalanceForRentExemption(0);
         const depositLamports = lamports + minBalance + feeBuffer;
 
+
         const tx = new web3.Transaction().add(
             web3.SystemProgram.createAccount({
                 fromPubkey: this.connectedWallet,
