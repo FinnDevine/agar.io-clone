@@ -13,8 +13,7 @@ exports.Map = class {
         this.viruses = new exports.virusUtils.VirusManager(config.virus);
         this.massFood = new exports.massFoodUtils.MassFoodManager();
         this.players = new exports.playerUtils.PlayerManager();
-        this.leaderboard = [];
-        this.leaderboardChanged = false;
+        this.lobbies = new Map();
     }
 
     balanceMass(foodMass, gameMass, maxFood, maxVirus) {
@@ -97,20 +96,23 @@ exports.MapManager = class {
         }
     }
 
-    updateLeaderboard() {
-        const topPlayers = this.players.getTopPlayers();
-        if (this.leaderboard.length !== topPlayers.length) {
-            this.leaderboard = topPlayers;
-            this.leaderboardChanged = true;
-        } else {
-            for (let i = 0; i < this.leaderboard.length; i++) {
-                if (this.leaderboard[i].id !== topPlayers[i].id) {
-                    this.leaderboard = topPlayers;
-                    this.leaderboardChanged = true;
-                    return;
-                }
-            }
+    addSocketToLobby(depositOption, socketId) {
+        if (!this.lobbies.has(depositOption)) {
+            this.lobbies.set(depositOption, new Set());
         }
-        // no change
+        this.lobbies.get(depositOption).add(socketId);
+    }
+
+    removeSocketFromLobby(depositOption, socketId) {
+        if (!this.lobbies.has(depositOption)) return;
+        const lobby = this.lobbies.get(depositOption);
+        lobby.delete(socketId);
+        if (lobby.size === 0) {
+            this.lobbies.delete(depositOption);
+        }
+    }
+
+    getLobbySockets(depositOption) {
+        return this.lobbies.get(depositOption) || new Set();
     }
 }
