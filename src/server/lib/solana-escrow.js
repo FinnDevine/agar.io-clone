@@ -6,11 +6,48 @@ const ESCROW_PUBLIC = process.env.ESCROW_PUBLIC_KEY;
 
 const connection = new Connection(RPC_ENDPOINT, 'confirmed');
 
-const escrowKeypair = ESCROW_SECRET ? Keypair.fromSecretKey(Buffer.from(JSON.parse(ESCROW_SECRET))) : null;
+function decodeBase58(str) {
+    const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    const ALPHABET_MAP = {};
+    for (let i = 0; i < ALPHABET.length; i++) {
+        ALPHABET_MAP[ALPHABET[i]] = i;
+    }
+    let bytes = [0];
+    for (let i = 0; i < str.length; i++) {
+        const value = ALPHABET_MAP[str[i]];
+        if (value === undefined) throw new Error('Invalid base58 character');
+        let carry = value;
+        for (let j = 0; j < bytes.length; ++j) {
+            carry += bytes[j] * 58;
+            bytes[j] = carry & 0xff;
+            carry >>= 8;
+        }
+        while (carry > 0) {
+            bytes.push(carry & 0xff);
+            carry >>= 8;
+        }
+    }
+    for (let k = 0; k < str.length && str[k] === '1'; k++) {
+        bytes.push(0);
+    }
+    return Buffer.from(bytes.reverse());
+}
+
+function parseSecretKey(secret) {
+    if (!secret) throw new Error('Secret key not provided');
+    const trimmed = secret.trim();
+    if (trimmed.startsWith('[')) {
+        return Buffer.from(JSON.parse(trimmed));
+    }
+    return decodeBase58(trimmed);
+}
+
+const escrowKeypair = ESCROW_SECRET ? Keypair.fromSecretKey(parseSecretKey(ESCROW_SECRET)) : null;
 const escrowPublicKey = ESCROW_PUBLIC ? new PublicKey(ESCROW_PUBLIC) : (escrowKeypair ? escrowKeypair.publicKey : null);
 
 async function deposit(fromSecret, amountLamports) {
-    const from = Keypair.fromSecretKey(Buffer.from(JSON.parse(fromSecret)));
+    if (!escrowPublicKey) throw new Error('Escrow public key not configured');
+    const from = Keypair.fromSecretKey(parseSecretKey(fromSecret));
     const tx = new Transaction().add(SystemProgram.transfer({
         fromPubkey: from.publicKey,
         toPubkey: escrowPublicKey,
