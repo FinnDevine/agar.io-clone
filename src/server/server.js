@@ -355,6 +355,7 @@ const tickGame = () => {
             map.players.removePlayerByIndex(gotEaten.playerIndex);
         }
     });
+    });
 
 };
 
