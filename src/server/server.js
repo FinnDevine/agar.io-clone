@@ -74,7 +74,7 @@ const addPlayer = (socket) => {
                 await escrowRepository.recordDeposit(currentPlayer.id, clientPlayerData.wallet, clientPlayerData.amount);
                 currentPlayer.walletAddress = clientPlayerData.wallet;
                 currentPlayer.escrowBalance = clientPlayerData.amount;
-                currentPlayer.walletBalance = 0;
+                currentPlayer.walletBalance = currentPlayer.escrowBalance;
                 currentPlayer.depositOption = clientPlayerData.depositSol;
             } catch (e) {
                 console.error('Deposit failed', e);
