@@ -8,6 +8,7 @@ class Canvas {
         this.socket = global.socket;
         this.directions = [];
         this.leaveTimer = null;
+        this.leaveInterval = null;
         var self = this;
 
         this.cv = document.getElementById('cvs');
@@ -30,6 +31,7 @@ class Canvas {
         this.cv.addEventListener('touchstart', this.touchInput, false);
         this.cv.addEventListener('touchmove', this.touchInput, false);
         this.cv.parent = self;
+        this.leaveTimerEl = document.getElementById('leaveTimer');
         global.canvas = this;
     }
 
@@ -41,9 +43,25 @@ class Canvas {
         if (global.gameStart && key === global.KEY_LEAVE) {
 
             if (!self.leaveTimer) {
+                let countdown = 10;
+                self.leaveTimerEl.innerText = 'Leaving in ' + countdown;
+                self.leaveTimerEl.style.display = 'block';
+                self.leaveInterval = setInterval(function () {
+                    countdown--;
+                    if (countdown <= 0) {
+                        clearInterval(self.leaveInterval);
+                        self.leaveInterval = null;
+                    } else {
+                        self.leaveTimerEl.innerText = 'Leaving in ' + countdown;
+                    }
+                }, 1000);
                 self.leaveTimer = setTimeout(function () {
+                    global.leftGame = true;
                     self.socket.emit('leaveGame');
                     self.leaveTimer = null;
+                    clearInterval(self.leaveInterval);
+                    self.leaveInterval = null;
+                    self.leaveTimerEl.style.display = 'none';
                 }, 10000);
             }
         } else if (self.directional(key)) {
@@ -59,11 +77,15 @@ class Canvas {
     directionUp(event) {
         var key = event.which || event.keyCode;
         if (global.gameStart && key === global.KEY_LEAVE) {
-
             if (this.leaveTimer) {
                 clearTimeout(this.leaveTimer);
                 this.leaveTimer = null;
             }
+            if (this.leaveInterval) {
+                clearInterval(this.leaveInterval);
+                this.leaveInterval = null;
+            }
+            this.leaveTimerEl.style.display = 'none';
         }
         if (this.directional(key)) { // this == the actual class
             if (this.newDirection(key, this.directions, false)) {
