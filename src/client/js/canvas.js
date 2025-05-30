@@ -19,7 +19,9 @@ class Canvas {
         this.cv.addEventListener('keyup', function(event) {
             self.reenviar = true;
             self.directionUp(event);
+
             if (global.gameStart && (event.which || event.keyCode) === global.KEY_LEAVE && self.leaveTimer) {
+
                 clearTimeout(self.leaveTimer);
                 self.leaveTimer = null;
             }
@@ -35,7 +37,9 @@ class Canvas {
     directionDown(event) {
         var key = event.which || event.keyCode;
         var self = this.parent; // have to do this so we are not using the cv object
+
         if (global.gameStart && key === global.KEY_LEAVE) {
+
             if (!self.leaveTimer) {
                 self.leaveTimer = setTimeout(function () {
                     self.socket.emit('leaveGame');
@@ -55,6 +59,7 @@ class Canvas {
     directionUp(event) {
         var key = event.which || event.keyCode;
         if (global.gameStart && key === global.KEY_LEAVE) {
+
             if (this.leaveTimer) {
                 clearTimeout(this.leaveTimer);
                 this.leaveTimer = null;
